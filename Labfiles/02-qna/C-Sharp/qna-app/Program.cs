@@ -2,6 +2,8 @@
 using System.IO;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using Azure;
+using Azure.AI.Language.QuestionAnswering;
 
 // Import namespaces
 
@@ -23,10 +25,29 @@ namespace qna_app
                 string deploymentName = configuration["QADeploymentName"];
 
                 // Create client using endpoint and key
-
+                AzureKeyCredential credentials = new(aiSvcKey);
+                Uri endpoint = new Uri(aiSvcEndpoint);
+                QuestionAnsweringClient aiClient = new(endpoint, credentials);
 
                 // Submit a question and display the answer
-                
+                string user_question = "";
+                while (true)
+                {
+                    Console.WriteLine("Question: ");
+                    user_question = Console.ReadLine();
+                    if (user_question.ToLower() == "quit")
+                        break;
+                    QuestionAnsweringProject project = new QuestionAnsweringProject(projectName, deploymentName);
+                    Response<AnswersResult> response = aiClient.GetAnswers(user_question, project);
+                    foreach (KnowledgeBaseAnswer answer in response.Value.Answers)
+                    {
+                        Console.WriteLine(answer.Answer);
+                        Console.WriteLine($"Confidence: {answer.Confidence:P2}");
+                        Console.WriteLine($"Source: {answer.Source}");
+                        Console.WriteLine();
+                    }   
+
+                }
 
             }
             catch (Exception ex)
